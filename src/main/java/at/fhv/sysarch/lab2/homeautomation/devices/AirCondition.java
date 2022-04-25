@@ -74,7 +74,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
 
     // concrete implementation -> reaction to tell calls
     private Behavior<AirConditionCommand> onReadTemperature(EnrichedTemperature r) {
-        getContext().getLog().info("Aircondition reading {}", r.value.get());
+        getContext().getLog().info("Aircondition reading {}", r.value.get() + " " + r.unit.get());
         // TODO: process temperature
         if(r.value.get() >= 15) {
             getContext().getLog().info("Aircondition actived");
@@ -101,19 +101,26 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         getContext().getLog().info("Turning Aircondition to {}", r.value);
 
         if(r.value.get() == true) {
-            return Behaviors.receive(AirConditionCommand.class)
-                    .onMessage(EnrichedTemperature.class, this::onReadTemperature)
-                    .onMessage(PowerAirCondition.class, this::onPowerAirConditionOff)
-                    .onSignal(PostStop.class, signal -> onPostStop())
-                    .build();
+            return this.powerOn();
         }
         return this;
+    }
+
+    private Behavior<AirConditionCommand> powerOn() {
+        this.poweredOn = true;
+
+        // change behavior -> when turned on: reaction to temperature changes
+        return Behaviors.receive(AirConditionCommand.class)
+                .onMessage(EnrichedTemperature.class, this::onReadTemperature)
+                .onMessage(PowerAirCondition.class, this::onPowerAirConditionOff)
+                .onSignal(PostStop.class, signal -> onPostStop())
+                .build();
     }
 
     private Behavior<AirConditionCommand> powerOff() {
         this.poweredOn = false;
 
-        // change behavior
+        // change behavior -> when turned off: no reaction to temperature changes anymore
         return Behaviors.receive(AirConditionCommand.class)
                 .onMessage(PowerAirCondition.class, this::onPowerAirConditionOn)
                 .onSignal(PostStop.class, signal -> onPostStop())
