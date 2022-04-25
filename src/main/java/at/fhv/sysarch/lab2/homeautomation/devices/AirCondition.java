@@ -43,6 +43,10 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         }
     }
 
+    public static final class LogStatus implements AirConditionCommand {
+        public LogStatus() {}
+    }
+
     // class attributes
     private final String groupId;
     private final String deviceId;
@@ -68,8 +72,18 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         return newReceiveBuilder()
                 .onMessage(EnrichedTemperature.class, this::onReadTemperature)
                 .onMessage(PowerAirCondition.class, this::onPowerAirConditionOff)
+                .onMessage(LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
+    }
+
+    private Behavior<AirConditionCommand> onLogStatus(LogStatus logStatus) {
+        getContext().getLog().info("groupId: " + this.groupId);
+        getContext().getLog().info("deviceId: " + this.deviceId);
+        getContext().getLog().info("active: " + this.active);
+        getContext().getLog().info("poweredOn: " + this.poweredOn);
+
+        return this;
     }
 
     // concrete implementation -> reaction to tell calls
@@ -106,6 +120,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         return this;
     }
 
+
     private Behavior<AirConditionCommand> powerOn() {
         this.poweredOn = true;
 
@@ -113,6 +128,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         return Behaviors.receive(AirConditionCommand.class)
                 .onMessage(EnrichedTemperature.class, this::onReadTemperature)
                 .onMessage(PowerAirCondition.class, this::onPowerAirConditionOff)
+                .onMessage(LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
@@ -123,6 +139,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         // change behavior -> when turned off: no reaction to temperature changes anymore
         return Behaviors.receive(AirConditionCommand.class)
                 .onMessage(PowerAirCondition.class, this::onPowerAirConditionOn)
+                .onMessage(LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
