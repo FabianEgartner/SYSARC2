@@ -12,8 +12,10 @@ import java.util.Optional;
 
 public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.TemperatureCommand> {
 
+    // interface
     public interface TemperatureCommand {}
 
+    // classes or "methods" callable -> triggered by tell
     public static final class ReadTemperature implements TemperatureCommand {
         final Optional<Double> value;
 
@@ -22,14 +24,17 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
         }
     }
 
+    // initializing (called by HomeAutomationController)
     public static Behavior<TemperatureCommand> create(ActorRef<AirCondition.AirConditionCommand> airCondition, String groupId, String deviceId) {
         return Behaviors.setup(context -> new TemperatureSensor(context, airCondition, groupId, deviceId));
     }
 
+    // class attributes
     private final String groupId;
     private final String deviceId;
     private ActorRef<AirCondition.AirConditionCommand> airCondition;
 
+    // constructor
     public TemperatureSensor(ActorContext<TemperatureCommand> context, ActorRef<AirCondition.AirConditionCommand> airCondition, String groupId, String deviceId) {
         super(context);
         this.airCondition = airCondition;
@@ -39,6 +44,7 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
         getContext().getLog().info("TemperatureSensor started");
     }
 
+    // behavior of AirCondition class -> determines which method gets called after tell has been called from outside
     @Override
     public Receive<TemperatureCommand> createReceive() {
         return newReceiveBuilder()
@@ -47,6 +53,7 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
                 .build();
     }
 
+    // concrete implementation -> reaction to tell calls
     private Behavior<TemperatureCommand> onReadTemperature(ReadTemperature r) {
         getContext().getLog().info("TemperatureSensor received {}", r.value.get());
         this.airCondition.tell(new AirCondition.EnrichedTemperature(r.value, Optional.of("Celsius")));

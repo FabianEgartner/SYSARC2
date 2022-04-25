@@ -20,8 +20,11 @@ import akka.actor.typed.javadsl.Receive;
 import java.util.Optional;
 
 public class AirCondition extends AbstractBehavior<AirCondition.AirConditionCommand> {
+
+    // interface
     public interface AirConditionCommand {}
 
+    // classes or "methods" callable -> triggered by tell
     public static final class PowerAirCondition implements AirConditionCommand {
         final Optional<Boolean> value;
 
@@ -40,11 +43,13 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         }
     }
 
+    // class attributes
     private final String groupId;
     private final String deviceId;
     private boolean active = false;
     private boolean poweredOn = true;
 
+    // constructor
     public AirCondition(ActorContext<AirConditionCommand> context, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;
@@ -52,10 +57,12 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         getContext().getLog().info("AirCondition started");
     }
 
+    // initializing (called by HomeAutomationController)
     public static Behavior<AirConditionCommand> create(String groupId, String deviceId) {
         return Behaviors.setup(context -> new AirCondition(context, groupId, deviceId));
     }
 
+    // behavior of AirCondition class -> determines which method gets called after tell has been called from outside
     @Override
     public Receive<AirConditionCommand> createReceive() {
         return newReceiveBuilder()
@@ -65,6 +72,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
                 .build();
     }
 
+    // concrete implementation -> reaction to tell calls
     private Behavior<AirConditionCommand> onReadTemperature(EnrichedTemperature r) {
         getContext().getLog().info("Aircondition reading {}", r.value.get());
         // TODO: process temperature
@@ -104,6 +112,8 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
 
     private Behavior<AirConditionCommand> powerOff() {
         this.poweredOn = false;
+
+        // change behavior
         return Behaviors.receive(AirConditionCommand.class)
                 .onMessage(PowerAirCondition.class, this::onPowerAirConditionOn)
                 .onSignal(PostStop.class, signal -> onPostStop())
