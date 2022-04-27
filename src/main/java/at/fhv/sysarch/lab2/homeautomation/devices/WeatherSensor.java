@@ -21,6 +21,10 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
         public ReadWeather(WeatherCondition weatherCondition) { this.weatherCondition = weatherCondition; }
     }
 
+    public static final class LogStatus implements WeatherSensor.WeatherCommand {
+        public LogStatus() {}
+    }
+
     // initializing (called by HomeAutomationController)
     public static Behavior<WeatherSensor.WeatherCommand> create(String groupId, String deviceId) {
         return Behaviors.setup(context -> new WeatherSensor(context, groupId, deviceId));
@@ -29,6 +33,7 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
     // class attributes
     private final String groupId;
     private final String deviceId;
+    private WeatherCondition weatherCondition;
 
     public WeatherSensor(ActorContext<WeatherCommand> context, String groupId, String deviceId) {
         super(context);
@@ -42,13 +47,24 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
     @Override
     public Receive<WeatherCommand> createReceive() {
         return newReceiveBuilder()
-                .onMessage(WeatherSensor.ReadWeather.class, this::onReadWeather)
+                .onMessage(ReadWeather.class, this::onReadWeather)
+                .onMessage(LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
 
     // concrete implementation -> reaction to tell calls
+    private Behavior<WeatherCommand> onLogStatus(LogStatus logStatus) {
+        getContext().getLog().info("groupId: " + this.groupId);
+        getContext().getLog().info("deviceId: " + this.deviceId);
+        getContext().getLog().info("weatherCondition: " + this.weatherCondition);
+
+        return this;
+    }
+
     private Behavior<WeatherCommand> onReadWeather(ReadWeather readWeather) {
+        this.weatherCondition = readWeather.weatherCondition;
+
         getContext().getLog().info("WeatherSensor received {}", readWeather.weatherCondition);
         return this;
     }

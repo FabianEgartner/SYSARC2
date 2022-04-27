@@ -77,6 +77,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
                 .build();
     }
 
+    // concrete implementation -> reaction to tell calls
     private Behavior<AirConditionCommand> onLogStatus(LogStatus logStatus) {
         getContext().getLog().info("groupId: " + this.groupId);
         getContext().getLog().info("deviceId: " + this.deviceId);
@@ -86,7 +87,6 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         return this;
     }
 
-    // concrete implementation -> reaction to tell calls
     private Behavior<AirConditionCommand> onReadTemperature(EnrichedTemperature r) {
         getContext().getLog().info("Aircondition reading {}", r.value.get() + " " + r.unit.get());
         // TODO: process temperature
