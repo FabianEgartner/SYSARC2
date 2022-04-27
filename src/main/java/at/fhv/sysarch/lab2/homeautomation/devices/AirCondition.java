@@ -26,19 +26,19 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
 
     // classes or "methods" callable -> triggered by tell
     public static final class PowerAirCondition implements AirConditionCommand {
-        final Optional<Boolean> value;
+        final boolean powerOn;
 
-        public PowerAirCondition(Optional<Boolean> value) {
-            this.value = value;
+        public PowerAirCondition(boolean powerOn) {
+            this.powerOn = powerOn;
         }
     }
 
     public static final class EnrichedTemperature implements AirConditionCommand {
-        Optional<Double> value;
-        Optional<String> unit;
+        final double temperature;
+        final String unit;
 
-        public EnrichedTemperature(Optional<Double> value, Optional<String> unit) {
-            this.value = value;
+        public EnrichedTemperature(double temperature, String unit) {
+            this.temperature = temperature;
             this.unit = unit;
         }
     }
@@ -84,45 +84,56 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         getContext().getLog().info("active: " + this.active);
         getContext().getLog().info("poweredOn: " + this.poweredOn);
 
+        return Behaviors.same();
+    }
+
+    private Behavior<AirConditionCommand> onReadTemperature(EnrichedTemperature enrichedTemperature) {
+        double temperature = enrichedTemperature.temperature;
+        String unit = enrichedTemperature.unit;
+
+        getContext().getLog().info("Aircondition reading {}", temperature + " " + unit);
+
+        if (temperature > 20) {
+            getContext().getLog().info("Aircondition cools");
+            this.active = true;
+
+        } else {
+            getContext().getLog().info("Aircondition does not cool");
+            this.active = false;
+        }
+
         return this;
     }
 
-    private Behavior<AirConditionCommand> onReadTemperature(EnrichedTemperature r) {
-        getContext().getLog().info("Aircondition reading {}", r.value.get() + " " + r.unit.get());
-        // TODO: process temperature
-        if(r.value.get() >= 15) {
-            getContext().getLog().info("Aircondition actived");
-            this.active = true;
+    private Behavior<AirConditionCommand> onPowerAirConditionOff(PowerAirCondition powerAirCondition) {
+        boolean powerOn = powerAirCondition.powerOn;
+
+        getContext().getLog().info("Turning Aircondition to {}", powerOn);
+
+        if(!powerOn) {
+            return this.powerOff();
         }
-        else {
-            getContext().getLog().info("Aircondition deactived");
-            this.active =  false;
+
+        return this;
+    }
+
+    private Behavior<AirConditionCommand> onPowerAirConditionOn(PowerAirCondition powerAirCondition) {
+        boolean powerOn = powerAirCondition.powerOn;
+
+        getContext().getLog().info("Turning Aircondition to {}", powerOn);
+
+        if (powerOn) {
+            return this.powerOn();
         }
 
         return Behaviors.same();
     }
 
-    private Behavior<AirConditionCommand> onPowerAirConditionOff(PowerAirCondition r) {
-        getContext().getLog().info("Turning Aircondition to {}", r.value);
-
-        if(r.value.get() == false) {
-            return this.powerOff();
-        }
-        return this;
-    }
-
-    private Behavior<AirConditionCommand> onPowerAirConditionOn(PowerAirCondition r) {
-        getContext().getLog().info("Turning Aircondition to {}", r.value);
-
-        if(r.value.get() == true) {
-            return this.powerOn();
-        }
-        return this;
-    }
-
 
     private Behavior<AirConditionCommand> powerOn() {
         this.poweredOn = true;
+        this.active = false;
+        System.out.println(("POWERED ON!!!"));
 
         // change behavior -> when turned on: reaction to temperature changes
         return Behaviors.receive(AirConditionCommand.class)
@@ -135,6 +146,8 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
 
     private Behavior<AirConditionCommand> powerOff() {
         this.poweredOn = false;
+        this.active = false;
+        System.out.println(("POWERED OFF!!!"));
 
         // change behavior -> when turned off: no reaction to temperature changes anymore
         return Behaviors.receive(AirConditionCommand.class)

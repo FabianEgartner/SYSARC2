@@ -54,9 +54,15 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
     }
 
     // concrete implementation -> reaction to tell calls
-    private Behavior<TemperatureCommand> onReadTemperature(ReadTemperature r) {
-        getContext().getLog().info("TemperatureSensor received {}", r.value.get());
-        this.airCondition.tell(new AirCondition.EnrichedTemperature(r.value, Optional.of("Celsius")));
+    private Behavior<TemperatureCommand> onReadTemperature(ReadTemperature readTemperature) {
+
+        if (readTemperature.value.isPresent()) {
+            double newTemperature = readTemperature.value.get();
+
+            getContext().getLog().info("TemperatureSensor received {}", newTemperature);
+            this.airCondition.tell(new AirCondition.EnrichedTemperature(newTemperature, "Celsius"));
+        }
+
         return this;
     }
 

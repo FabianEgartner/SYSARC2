@@ -59,7 +59,7 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
         getContext().getLog().info("deviceId: " + this.deviceId);
         getContext().getLog().info("weatherCondition: " + this.weatherCondition);
 
-        return this;
+        return Behaviors.same();
     }
 
     private Behavior<WeatherCommand> onReadWeather(ReadWeather readWeather) {
