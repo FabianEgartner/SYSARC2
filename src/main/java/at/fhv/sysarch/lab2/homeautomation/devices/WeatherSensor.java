@@ -73,11 +73,11 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
         getContext().getLog().info("WeatherSensor received {}", readWeather.weatherCondition);
 
         if (weatherCondition.equals(WeatherCondition.SUNNY)) {
-            this.blinds.tell(new Blinds.MoveBlinds(BlindsState.OPEN));
+            this.blinds.tell(new Blinds.MoveBlinds(BlindsState.CLOSED));
         }
 
         else if (weatherCondition.equals(WeatherCondition.CLOUDY)) {
-            this.blinds.tell(new Blinds.MoveBlinds(BlindsState.CLOSED));
+            this.blinds.tell(new Blinds.MoveBlinds(BlindsState.OPEN));
         }
 
         return this;
