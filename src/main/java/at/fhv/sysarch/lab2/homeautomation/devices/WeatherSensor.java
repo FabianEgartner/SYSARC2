@@ -35,6 +35,7 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
     private final String deviceId;
     private WeatherCondition weatherCondition;
 
+    // constructor
     public WeatherSensor(ActorContext<WeatherCommand> context, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;

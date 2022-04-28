@@ -17,10 +17,10 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
 
     // classes or "methods" callable -> triggered by tell
     public static final class ReadTemperature implements TemperatureCommand {
-        final Optional<Double> value;
+        final Optional<Double> temperature;
 
-        public ReadTemperature(Optional<Double> value) {
-            this.value = value;
+        public ReadTemperature(Optional<Double> temperature) {
+            this.temperature = temperature;
         }
     }
 
@@ -32,7 +32,7 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
     // class attributes
     private final String groupId;
     private final String deviceId;
-    private ActorRef<AirCondition.AirConditionCommand> airCondition;
+    private final ActorRef<AirCondition.AirConditionCommand> airCondition;
 
     // constructor
     public TemperatureSensor(ActorContext<TemperatureCommand> context, ActorRef<AirCondition.AirConditionCommand> airCondition, String groupId, String deviceId) {
@@ -56,8 +56,8 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
     // concrete implementation -> reaction to tell calls
     private Behavior<TemperatureCommand> onReadTemperature(ReadTemperature readTemperature) {
 
-        if (readTemperature.value.isPresent()) {
-            double newTemperature = readTemperature.value.get();
+        if (readTemperature.temperature.isPresent()) {
+            double newTemperature = readTemperature.temperature.get();
 
             getContext().getLog().info("TemperatureSensor received {}", newTemperature);
             this.airCondition.tell(new AirCondition.EnrichedTemperature(newTemperature, "Celsius"));
@@ -70,5 +70,4 @@ public class TemperatureSensor extends AbstractBehavior<TemperatureSensor.Temper
         getContext().getLog().info("TemperatureSensor actor {}-{} stopped", groupId, deviceId);
         return this;
     }
-
 }

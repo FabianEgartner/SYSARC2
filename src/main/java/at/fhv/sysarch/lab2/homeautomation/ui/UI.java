@@ -65,6 +65,7 @@ public class UI extends AbstractBehavior<Void> {
             reader = scanner.nextLine();
             // TODO: change input handling
             String[] command = reader.split(" ");
+
             if(command[0].equals("t")) {
                 this.tempSensor.tell(new TemperatureSensor.ReadTemperature(Optional.of(Double.valueOf(command[1]))));
             }
@@ -83,19 +84,20 @@ public class UI extends AbstractBehavior<Void> {
             }
             if(command[0].equals("w")) {
                 String weatherInput = command[1].toUpperCase();
+
                 if (weatherInput.equals(WeatherCondition.SUNNY.toString())) {
                     this.weatherSensor.tell(new WeatherSensor.ReadWeather(WeatherCondition.SUNNY));
                 }
                 else if (weatherInput.equals(WeatherCondition.CLOUDY.toString())) {
                     this.weatherSensor.tell(new WeatherSensor.ReadWeather(WeatherCondition.CLOUDY));
                 }
-                System.out.println(weatherInput);
             }
             if(command[0].equals("w_status")) {
                 this.weatherSensor.tell(new WeatherSensor.LogStatus());
             }
             // TODO: process Input
         }
+
         getContext().getLog().info("UI done");
     }
 }
