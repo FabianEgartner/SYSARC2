@@ -1,17 +1,17 @@
 package at.fhv.sysarch.lab2.homeautomation.ui;
 
 import akka.actor.typed.ActorRef;
-import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.PostStop;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import at.fhv.sysarch.lab2.homeautomation.HomeAutomationController;
 import at.fhv.sysarch.lab2.homeautomation.devices.AirCondition;
+import at.fhv.sysarch.lab2.homeautomation.devices.Blinds;
 import at.fhv.sysarch.lab2.homeautomation.devices.TemperatureSensor;
-import at.fhv.sysarch.lab2.homeautomation.devices.WeatherCondition;
+import at.fhv.sysarch.lab2.homeautomation.devices.enums.BlindsState;
+import at.fhv.sysarch.lab2.homeautomation.devices.enums.WeatherCondition;
 import at.fhv.sysarch.lab2.homeautomation.devices.WeatherSensor;
 
 import java.util.Optional;
@@ -22,23 +22,27 @@ public class UI extends AbstractBehavior<Void> {
     private ActorRef<TemperatureSensor.TemperatureCommand> tempSensor;
     private ActorRef<AirCondition.AirConditionCommand> airCondition;
     private ActorRef<WeatherSensor.WeatherCommand> weatherSensor;
+    private ActorRef<Blinds.BlindsCommand> blinds;
 
     public static Behavior<Void> create(ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
                                         ActorRef<AirCondition.AirConditionCommand> airCondition,
-                                        ActorRef<WeatherSensor.WeatherCommand> weatherSensor) {
-        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor));
+                                        ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
+                                        ActorRef<Blinds.BlindsCommand> blinds) {
+        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor, blinds));
     }
 
     private UI(ActorContext<Void> context,
                 ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
                 ActorRef<AirCondition.AirConditionCommand> airCondition,
-                ActorRef<WeatherSensor.WeatherCommand> weatherSensor) {
+                ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
+                ActorRef<Blinds.BlindsCommand> blinds) {
         super(context);
         // TODO: implement actor and behavior as needed
         // TODO: move UI initialization to appropriate place
         this.airCondition = airCondition;
         this.tempSensor = tempSensor;
         this.weatherSensor = weatherSensor;
+        this.blinds = blinds;
         new Thread(() -> { this.runCommandLine(); }).start();
 
         getContext().getLog().info("UI started");
@@ -66,9 +70,12 @@ public class UI extends AbstractBehavior<Void> {
             // TODO: change input handling
             String[] command = reader.split(" ");
 
+            // TemperatureSensor
             if(command[0].equals("t")) {
                 this.tempSensor.tell(new TemperatureSensor.ReadTemperature(Optional.of(Double.valueOf(command[1]))));
             }
+
+            // AirCondition
             if(command[0].equals("a")) {
                 String booleanInput = command[1].toLowerCase();
 
@@ -79,9 +86,12 @@ public class UI extends AbstractBehavior<Void> {
                     this.airCondition.tell(new AirCondition.PowerAirCondition(false));
                 }
             }
+
             if(command[0].equals("a_status")) {
                 this.airCondition.tell(new AirCondition.LogStatus());
             }
+
+            // WeatherSensor
             if(command[0].equals("w")) {
                 String weatherInput = command[1].toUpperCase();
 
@@ -92,9 +102,27 @@ public class UI extends AbstractBehavior<Void> {
                     this.weatherSensor.tell(new WeatherSensor.ReadWeather(WeatherCondition.CLOUDY));
                 }
             }
+
             if(command[0].equals("w_status")) {
                 this.weatherSensor.tell(new WeatherSensor.LogStatus());
             }
+
+            // Blinds
+            if(command[0].equals("b")) {
+                String blindsStateInput = command[1].toUpperCase();
+
+                if (blindsStateInput.equals(BlindsState.OPEN.toString())) {
+                    this.blinds.tell(new Blinds.MoveBlinds(BlindsState.OPEN));
+                }
+                else if (blindsStateInput.equals(BlindsState.CLOSED.toString())) {
+                    this.blinds.tell(new Blinds.MoveBlinds(BlindsState.CLOSED));
+                }
+            }
+
+            if(command[0].equals("b_status")) {
+                this.blinds.tell(new Blinds.LogStatus());
+            }
+
             // TODO: process Input
         }
 

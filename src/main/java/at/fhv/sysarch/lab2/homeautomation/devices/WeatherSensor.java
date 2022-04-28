@@ -7,6 +7,8 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import at.fhv.sysarch.lab2.homeautomation.devices.enums.BlindsState;
+import at.fhv.sysarch.lab2.homeautomation.devices.enums.WeatherCondition;
 
 
 public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand> {
@@ -26,20 +28,22 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
     }
 
     // initializing (called by HomeAutomationController)
-    public static Behavior<WeatherSensor.WeatherCommand> create(String groupId, String deviceId) {
-        return Behaviors.setup(context -> new WeatherSensor(context, groupId, deviceId));
+    public static Behavior<WeatherSensor.WeatherCommand> create(ActorRef<Blinds.BlindsCommand> blinds, String groupId, String deviceId) {
+        return Behaviors.setup(context -> new WeatherSensor(context, blinds, groupId, deviceId));
     }
 
     // class attributes
     private final String groupId;
     private final String deviceId;
+    private final ActorRef<Blinds.BlindsCommand> blinds;
     private WeatherCondition weatherCondition;
 
     // constructor
-    public WeatherSensor(ActorContext<WeatherCommand> context, String groupId, String deviceId) {
+    public WeatherSensor(ActorContext<WeatherCommand> context, ActorRef<Blinds.BlindsCommand> blinds, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;
         this.deviceId = deviceId;
+        this.blinds = blinds;
 
         getContext().getLog().info("WeatherSensor started");
     }
@@ -67,6 +71,15 @@ public class WeatherSensor extends AbstractBehavior<WeatherSensor.WeatherCommand
         this.weatherCondition = readWeather.weatherCondition;
 
         getContext().getLog().info("WeatherSensor received {}", readWeather.weatherCondition);
+
+        if (weatherCondition.equals(WeatherCondition.SUNNY)) {
+            this.blinds.tell(new Blinds.MoveBlinds(BlindsState.OPEN));
+        }
+
+        else if (weatherCondition.equals(WeatherCondition.CLOUDY)) {
+            this.blinds.tell(new Blinds.MoveBlinds(BlindsState.CLOSED));
+        }
+
         return this;
     }
 
