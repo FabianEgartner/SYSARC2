@@ -56,20 +56,19 @@ public class MediaStation extends AbstractBehavior<MediaStation.MediaStationComm
     }
 
     private Behavior<MediaStation.MediaStationCommand> onWatchMovie (WatchMovie watchMovie) {
-        boolean movieRunning = watchMovie.movieRunning;
+        boolean startMovie = watchMovie.movieRunning;
 
-        getContext().getLog().info("MediaStation received {}", movieRunning);
+        getContext().getLog().info("MediaStation received {}", startMovie);
 
-        if (movieRunning) {
+        if (startMovie && !this.movieRunning) {
             getContext().getLog().info("Movie is running");
             this.movieRunning = true;
             this.blinds.tell(new Blinds.MoveBlindsMediaStation(BlindsState.CLOSED));
 
         }
-        else {
+        else if (!startMovie) {
             getContext().getLog().info("Movie is not running");
             this.movieRunning = false;
-            this.blinds.tell(new Blinds.MoveBlindsMediaStation(BlindsState.OPEN));
         }
 
         return this;
