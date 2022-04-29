@@ -17,8 +17,6 @@ import akka.actor.typed.javadsl.Receive;
  * For an example with functional-style please refer to: {@link https://doc.akka.io/docs/akka/current/typed/style-guide.html#functional-versus-object-oriented-style}
  *
  */
-import java.util.Optional;
-
 public class AirCondition extends AbstractBehavior<AirCondition.AirConditionCommand> {
 
     // interface
@@ -91,14 +89,14 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         double temperature = enrichedTemperature.temperature;
         String unit = enrichedTemperature.unit;
 
-        getContext().getLog().info("Aircondition reading {}", temperature + " " + unit);
+        getContext().getLog().info("AirCondition reading {}", temperature + " " + unit);
 
         if (temperature > 20) {
-            getContext().getLog().info("Aircondition cools");
+            getContext().getLog().info("AirCondition cools");
             this.active = true;
 
         } else {
-            getContext().getLog().info("Aircondition does not cool");
+            getContext().getLog().info("AirCondition does not cool");
             this.active = false;
         }
 
@@ -108,7 +106,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
     private Behavior<AirConditionCommand> onPowerAirConditionOff(PowerAirCondition powerAirCondition) {
         boolean powerOn = powerAirCondition.powerOn;
 
-        getContext().getLog().info("Turning Aircondition to {}", powerOn);
+        getContext().getLog().info("Turning AirCondition to {}", powerOn);
 
         if(!powerOn) {
             return this.powerOff();
@@ -120,7 +118,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
     private Behavior<AirConditionCommand> onPowerAirConditionOn(PowerAirCondition powerAirCondition) {
         boolean powerOn = powerAirCondition.powerOn;
 
-        getContext().getLog().info("Turning Aircondition to {}", powerOn);
+        getContext().getLog().info("Turning AirCondition to {}", powerOn);
 
         if (powerOn) {
             return this.powerOn();
@@ -158,7 +156,7 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
     }
 
     private AirCondition onPostStop() {
-        getContext().getLog().info("TemperatureSensor actor {}-{} stopped", groupId, deviceId);
+        getContext().getLog().info("AirCondition actor {}-{} stopped", groupId, deviceId);
         return this;
     }
 }
