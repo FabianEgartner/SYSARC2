@@ -50,8 +50,8 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     }
 
     // initializing (called by HomeAutomationController)
-    public static Behavior<FridgeCommand> create(ActorRef<FridgeWeightSensor.WeightCommand> weightSensor, ActorRef<FridgeSpaceSensor.SpaceCommand> spaceSensor, String groupId, String deviceId) {
-        return Behaviors.setup(context -> new Fridge(context, weightSensor, spaceSensor, groupId, deviceId));
+    public static Behavior<FridgeCommand> create(String groupId, String deviceId) {
+        return Behaviors.setup(context -> new Fridge(context, groupId, deviceId));
     }
 
     // class attributes
@@ -65,12 +65,12 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     private boolean poweredOn = true;
 
     // constructor
-    public Fridge(ActorContext<FridgeCommand> context, ActorRef<FridgeWeightSensor.WeightCommand> weightSensor, ActorRef<FridgeSpaceSensor.SpaceCommand> spaceSensor, String groupId, String deviceId) {
+    public Fridge(ActorContext<FridgeCommand> context, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;
         this.deviceId = deviceId;
-        this.weightSensor = weightSensor;
-        this.spaceSensor = spaceSensor;
+        this.weightSensor = context.spawn(FridgeWeightSensor.create(getContext().getSelf()), "WeightSensor");
+        this.spaceSensor = context.spawn(FridgeSpaceSensor.create(getContext().getSelf()), "SpaceSensor");
         getContext().getLog().info("Fridge started");
     }
 

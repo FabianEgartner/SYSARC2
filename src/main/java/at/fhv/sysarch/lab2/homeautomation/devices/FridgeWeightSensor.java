@@ -1,5 +1,6 @@
 package at.fhv.sysarch.lab2.homeautomation.devices;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.PostStop;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -13,29 +14,29 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
     public interface WeightCommand {}
 
     public static final class ReadWeight implements FridgeWeightSensor.WeightCommand {
-        public ReadWeight() {}
+        final int newProductWeight;
+        final int actFridgeWeight;
 
-        // TODO:
-    }
-
-    public static final class LogStatus implements FridgeWeightSensor.WeightCommand {
-        public LogStatus() {}
+        public ReadWeight(int newProductWeight, int actFridgeWeight) {
+            this.newProductWeight = newProductWeight;
+            this.actFridgeWeight = actFridgeWeight;
+        }
     }
 
     // initializing (called by HomeAutomationController)
-    public static Behavior<FridgeWeightSensor.WeightCommand> create(String groupId, String deviceId) {
-        return Behaviors.setup(context -> new FridgeWeightSensor(context, groupId, deviceId));
+    public static Behavior<FridgeWeightSensor.WeightCommand> create(ActorRef<Fridge.FridgeCommand> fridge) {
+        return Behaviors.setup(context -> new FridgeWeightSensor(context, fridge));
     }
 
     // class attributes
-    private final String groupId;
-    private final String deviceId;
+    private final ActorRef<Fridge.FridgeCommand> fridge;
+    private final int maxWeight;
 
     // constructor
-    public FridgeWeightSensor(ActorContext<FridgeWeightSensor.WeightCommand> context, String groupId, String deviceId) {
+    public FridgeWeightSensor(ActorContext<FridgeWeightSensor.WeightCommand> context, ActorRef<Fridge.FridgeCommand> fridge) {
         super(context);
-        this.groupId = groupId;
-        this.deviceId = deviceId;
+        this.fridge = fridge;
+        this.maxWeight = 100;
 
         getContext().getLog().info("FridgeWeightSensor started");
     }
@@ -43,21 +44,26 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
     @Override
     public Receive<FridgeWeightSensor.WeightCommand> createReceive() {
         return newReceiveBuilder()
-                .onMessage(FridgeWeightSensor.LogStatus.class, this::onLogStatus)
+                .onMessage(ReadWeight.class, this::onReadWeight)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
 
     // concrete implementation -> reaction to tell calls
-    private Behavior<FridgeWeightSensor.WeightCommand> onLogStatus(FridgeWeightSensor.LogStatus logStatus) {
-        getContext().getLog().info("groupId: " + this.groupId);
-        getContext().getLog().info("deviceId: " + this.deviceId);
+    private Behavior<WeightCommand> onReadWeight(ReadWeight readWeight) {
+        if ((readWeight.actFridgeWeight + readWeight.newProductWeight) > this.maxWeight) {
 
-        return Behaviors.same();
+        }
+
+        else {
+
+        }
+
+        return this;
     }
 
     private FridgeWeightSensor onPostStop() {
-        getContext().getLog().info("FridgeWeightSensor actor {}-{} stopped", groupId, deviceId);
+        getContext().getLog().info("FridgeWeightSensor actor stopped");
         return this;
     }
 }
