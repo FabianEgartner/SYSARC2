@@ -24,7 +24,7 @@ public class HomeAutomationController extends AbstractBehavior<Void>{
     }
 
     // initialize devices
-    // group 1: sensors, group 2: airCondition, group 3: blinds
+    // group 1: sensors, group 2: airCondition, group 3: blinds, group 4: MediaStation
     private  HomeAutomationController(ActorContext<Void> context) {
         super(context);
         // TODO: consider guardians and hierarchies. Who should create and communicate with which Actors?

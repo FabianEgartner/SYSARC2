@@ -14,10 +14,20 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
     public interface BlindsCommand {}
 
     // classes or "methods" callable -> triggered by tell
-    public static final class MoveBlinds implements Blinds.BlindsCommand {
+    public static final class MoveBlindsMediaStation implements Blinds.BlindsCommand {
         final BlindsState blindsState;
 
-        public MoveBlinds(BlindsState blindsState) {this.blindsState = blindsState; }
+        public MoveBlindsMediaStation(BlindsState blindsState) {
+            this.blindsState = blindsState;
+        }
+    }
+
+    public static final class MoveBlindsWeatherSensor implements Blinds.BlindsCommand {
+        final BlindsState blindsState;
+
+        public MoveBlindsWeatherSensor(BlindsState blindsState) {
+            this.blindsState = blindsState;
+        }
     }
 
     public static final class LogStatus implements Blinds.BlindsCommand {
@@ -33,6 +43,8 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
     private final String groupId;
     private final String deviceId;
     private boolean blindsAreUp = true;
+    private boolean movieRunning = false;
+    private boolean isSunny = false;
 
     // constructor
     public Blinds(ActorContext<BlindsCommand> context, String groupId, String deviceId) {
@@ -53,19 +65,21 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
                 .build();
     }
 
-    private Behavior<Blinds.BlindsCommand> onMoveBlinds (MoveBlinds moveBlinds) {
-        BlindsState blindsState = moveBlinds.blindsState;
+    private Behavior<Blinds.BlindsCommand> onMoveBlindsWeatherSensor (MoveBlindsWeatherSensor moveBlindsWeatherSensor) {
+        BlindsState blindsState = moveBlindsWeatherSensor.blindsState;
 
         getContext().getLog().info("Blinds received {}", blindsState);
 
-        if (blindsState.equals(BlindsState.OPEN)) {
+        if (blindsState.equals(BlindsState.OPEN) && !this.movieRunning) {
             getContext().getLog().info("Blinds are up");
             this.blindsAreUp = true;
+            this.isSunny = false;
 
         }
         else if (blindsState.equals(BlindsState.CLOSED)) {
             getContext().getLog().info("Blinds are down");
             this.blindsAreUp = false;
+            this.isSunny = true;
         }
 
         return this;
@@ -93,6 +107,8 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
         getContext().getLog().info("groupId: " + this.groupId);
         getContext().getLog().info("deviceId: " + this.deviceId);
         getContext().getLog().info("blindsAreUp: " + this.blindsAreUp);
+        getContext().getLog().info("movieRunning: " + this.movieRunning);
+        getContext().getLog().info("isSunny: " + this.isSunny);
 
         return Behaviors.same();
     }

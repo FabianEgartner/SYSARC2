@@ -75,16 +75,16 @@ public class MediaStation extends AbstractBehavior<MediaStation.MediaStationComm
         return this;
     }
 
-    private Behavior<MediaStation.BlindsCommand> onLogStatus(MediaStation.LogStatus logStatus) {
+    private Behavior<MediaStation.MediaStationCommand> onLogStatus(MediaStation.LogStatus logStatus) {
         getContext().getLog().info("groupId: " + this.groupId);
         getContext().getLog().info("deviceId: " + this.deviceId);
-        getContext().getLog().info("blindsAreUp: " + this.blindsAreUp);
+        getContext().getLog().info("movieRunning: " + this.movieRunning);
 
         return Behaviors.same();
     }
 
     private MediaStation onPostStop() {
-        getContext().getLog().info("Blinds actor {}-{} stopped", groupId, deviceId);
+        getContext().getLog().info("MediaStation actor {}-{} stopped", groupId, deviceId);
         return this;
     }
 }
