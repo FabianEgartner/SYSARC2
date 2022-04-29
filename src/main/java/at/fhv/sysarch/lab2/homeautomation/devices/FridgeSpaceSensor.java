@@ -54,7 +54,6 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
         if ((readSpace.actFridgeSpace + readSpace.newProductSpace) > this.maxSpace) {
 
         }
-
         else {
 
         }

@@ -10,6 +10,9 @@ import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.devices.*;
 import at.fhv.sysarch.lab2.homeautomation.devices.enums.BlindsState;
 import at.fhv.sysarch.lab2.homeautomation.devices.enums.WeatherCondition;
+import at.fhv.sysarch.lab2.homeautomation.products.Apple;
+import at.fhv.sysarch.lab2.homeautomation.products.Banana;
+import at.fhv.sysarch.lab2.homeautomation.products.WaterMelon;
 
 import java.util.Optional;
 import java.util.Scanner;
@@ -21,13 +24,15 @@ public class UI extends AbstractBehavior<Void> {
     private ActorRef<WeatherSensor.WeatherCommand> weatherSensor;
     private ActorRef<Blinds.BlindsCommand> blinds;
     private ActorRef<MediaStation.MediaStationCommand> mediaStation;
+    private ActorRef<Fridge.FridgeCommand> fridge;
 
     public static Behavior<Void> create(ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
                                         ActorRef<AirCondition.AirConditionCommand> airCondition,
                                         ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
                                         ActorRef<Blinds.BlindsCommand> blinds,
-                                        ActorRef<MediaStation.MediaStationCommand> mediaStation) {
-        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor, blinds, mediaStation));
+                                        ActorRef<MediaStation.MediaStationCommand> mediaStation,
+                                        ActorRef<Fridge.FridgeCommand> fridge) {
+        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor, blinds, mediaStation, fridge));
     }
 
     private UI(ActorContext<Void> context,
@@ -35,7 +40,8 @@ public class UI extends AbstractBehavior<Void> {
                ActorRef<AirCondition.AirConditionCommand> airCondition,
                ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
                ActorRef<Blinds.BlindsCommand> blinds,
-               ActorRef<MediaStation.MediaStationCommand> mediaStation) {
+               ActorRef<MediaStation.MediaStationCommand> mediaStation,
+               ActorRef<Fridge.FridgeCommand> fridge) {
         super(context);
         // TODO: implement actor and behavior as needed
         // TODO: move UI initialization to appropriate place
@@ -44,6 +50,7 @@ public class UI extends AbstractBehavior<Void> {
         this.weatherSensor = weatherSensor;
         this.blinds = blinds;
         this.mediaStation = mediaStation;
+        this.fridge = fridge;
         new Thread(this::runCommandLine).start();
 
         getContext().getLog().info("UI started");
@@ -72,12 +79,12 @@ public class UI extends AbstractBehavior<Void> {
             String[] command = reader.split(" ");
 
             // TemperatureSensor
-            if(command[0].equals("t")) {
+            if (command[0].equals("t")) {
                 this.tempSensor.tell(new TemperatureSensor.ReadTemperature(Optional.of(Double.valueOf(command[1]))));
             }
 
             // AirCondition
-            if(command[0].equals("a")) {
+            if (command[0].equals("a")) {
                 String booleanInput = command[1].toLowerCase();
 
                 if (booleanInput.equals("true")) {
@@ -88,12 +95,12 @@ public class UI extends AbstractBehavior<Void> {
                 }
             }
 
-            if(command[0].equals("a_status")) {
+            if (command[0].equals("a_status")) {
                 this.airCondition.tell(new AirCondition.LogStatus());
             }
 
             // WeatherSensor
-            if(command[0].equals("w")) {
+            if (command[0].equals("w")) {
                 String weatherInput = command[1].toUpperCase();
 
                 if (weatherInput.equals(WeatherCondition.SUNNY.toString())) {
@@ -104,12 +111,12 @@ public class UI extends AbstractBehavior<Void> {
                 }
             }
 
-            if(command[0].equals("w_status")) {
+            if (command[0].equals("w_status")) {
                 this.weatherSensor.tell(new WeatherSensor.LogStatus());
             }
 
             // Blinds
-            if(command[0].equals("b")) {
+            if (command[0].equals("b")) {
                 String blindsStateInput = command[1].toUpperCase();
 
                 if (blindsStateInput.equals(BlindsState.OPEN.toString())) {
@@ -120,12 +127,12 @@ public class UI extends AbstractBehavior<Void> {
                 }
             }
 
-            if(command[0].equals("b_status")) {
+            if (command[0].equals("b_status")) {
                 this.blinds.tell(new Blinds.LogStatus());
             }
 
             // MediaStation
-            if(command[0].equals("m")) {
+            if (command[0].equals("m")) {
                 String mediaStationStateInput = command[1].toLowerCase();
 
                 if (mediaStationStateInput.equals("true")) {
@@ -136,11 +143,46 @@ public class UI extends AbstractBehavior<Void> {
                 }
             }
 
-            if(command[0].equals("m_status")) {
+            if (command[0].equals("m_status")) {
                 this.mediaStation.tell(new MediaStation.LogStatus());
             }
 
-            // TODO: process Input
+            // Fridge
+            if (command[0].equals("f")) {
+                String fridgeStateInput = command[1].toLowerCase();
+
+                if (fridgeStateInput.equals("add")) {
+                    String productName = command[2].toLowerCase();
+
+                    switch (productName) {
+                        case "apple":
+                            this.fridge.tell(new Fridge.AddedProduct(new Apple()));
+                            break;
+                        case "banana":
+                            this.fridge.tell(new Fridge.AddedProduct(new Banana()));
+                            break;
+                        case "watermelon":
+                            this.fridge.tell(new Fridge.AddedProduct(new WaterMelon()));
+                            break;
+                    }
+                }
+                else if (fridgeStateInput.equals("power")) {
+                    String booleanInput = command[2].toLowerCase();
+
+                    switch (booleanInput) {
+                        case "true":
+                            this.fridge.tell(new Fridge.PowerFridge(true));
+                            break;
+                        case "false":
+                            this.fridge.tell(new Fridge.PowerFridge(false));
+                            break;
+                    }
+                }
+            }
+
+            if (command[0].equals("f_status")) {
+                this.fridge.tell(new Fridge.LogStatus());
+            }
         }
 
         getContext().getLog().info("UI done");

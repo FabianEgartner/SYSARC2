@@ -50,7 +50,7 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
     }
 
     // concrete implementation -> reaction to tell calls
-    private Behavior<WeightCommand> onReadWeight(ReadWeight readWeight) {
+    private Behavior<FridgeWeightSensor.WeightCommand> onReadWeight(ReadWeight readWeight) {
         if ((readWeight.actFridgeWeight + readWeight.newProductWeight) > this.maxWeight) {
 
         }

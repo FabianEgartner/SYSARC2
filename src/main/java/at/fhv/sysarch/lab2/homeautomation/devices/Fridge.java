@@ -7,19 +7,9 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import at.fhv.sysarch.lab2.homeautomation.products.Product;
 
 import java.util.List;
-
-/**
- * This class shows ONE way to switch behaviors in object-oriented style. Another approach is the use of static
- * methods for each behavior.
- *
- * The switching of behaviors is not strictly necessary for this example, but is rather used for demonstration
- * purpose only.
- *
- * For an example with functional-style please refer to: {@link https://doc.akka.io/docs/akka/current/typed/style-guide.html#functional-versus-object-oriented-style}
- *
- */
 
 public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
 
@@ -35,13 +25,11 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         }
     }
 
-    public static final class EnrichedTemperature implements FridgeCommand {
-        final double temperature;
-        final String unit;
+    public static final class AddedProduct implements FridgeCommand {
+        final Product product;
 
-        public EnrichedTemperature(double temperature, String unit) {
-            this.temperature = temperature;
-            this.unit = unit;
+        public AddedProduct(Product product) {
+            this.product = product;
         }
     }
 
@@ -50,27 +38,34 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     }
 
     // initializing (called by HomeAutomationController)
-    public static Behavior<FridgeCommand> create(String groupId, String deviceId) {
-        return Behaviors.setup(context -> new Fridge(context, groupId, deviceId));
+    public static Behavior<FridgeCommand> create(List<Product> products, String groupId, String deviceId) {
+        return Behaviors.setup(context -> new Fridge(context, products, groupId, deviceId));
     }
 
     // class attributes
     private final String groupId;
     private final String deviceId;
-    private final ActorRef<FridgeWeightSensor.WeightCommand> weightSensor;
     private final ActorRef<FridgeSpaceSensor.SpaceCommand> spaceSensor;
+    private final ActorRef<FridgeWeightSensor.WeightCommand> weightSensor;
     private List<Product> products;
-    private int weightCapacity;
-    private int spaceCapacity;
+    private int actSpaceCapacity;
+    private int actWeightCapacity;
     private boolean poweredOn = true;
 
     // constructor
-    public Fridge(ActorContext<FridgeCommand> context, String groupId, String deviceId) {
+    public Fridge(ActorContext<FridgeCommand> context, List<Product> products, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;
         this.deviceId = deviceId;
-        this.weightSensor = context.spawn(FridgeWeightSensor.create(getContext().getSelf()), "WeightSensor");
         this.spaceSensor = context.spawn(FridgeSpaceSensor.create(getContext().getSelf()), "SpaceSensor");
+        this.weightSensor = context.spawn(FridgeWeightSensor.create(getContext().getSelf()), "WeightSensor");
+        this.products = products;
+
+        for (Product product : this.products) {
+            actSpaceCapacity += product.getSpace();
+            actWeightCapacity += product.getWeight();
+        }
+
         getContext().getLog().info("Fridge started");
     }
 
@@ -78,6 +73,7 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     @Override
     public Receive<FridgeCommand> createReceive() {
         return newReceiveBuilder()
+                .onMessage(AddedProduct.class, this::onAddProduct)
                 .onMessage(PowerFridge.class, this::onPowerFridgeOff)
                 .onMessage(LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
@@ -89,16 +85,24 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         getContext().getLog().info("groupId: " + this.groupId);
         getContext().getLog().info("deviceId: " + this.deviceId);
         getContext().getLog().info("products: " + this.products);
-        getContext().getLog().info("weightCapacity: " + this.weightCapacity);
-        getContext().getLog().info("spaceCapacity: " + this.spaceCapacity);
+        getContext().getLog().info("weightCapacity: " + this.actWeightCapacity);
+        getContext().getLog().info("spaceCapacity: " + this.actSpaceCapacity);
         getContext().getLog().info("poweredOn: " + this.poweredOn);
 
         return Behaviors.same();
     }
 
-    
-    // TODO: methods here
-    
+    private Behavior<FridgeCommand> onAddProduct(AddedProduct addedProduct) {
+
+        // check space
+        this.spaceSensor.tell(new FridgeSpaceSensor.ReadSpace(addedProduct.product.getSpace(), this.actSpaceCapacity));
+
+        // check weight
+        this.weightSensor.tell(new FridgeWeightSensor.ReadWeight(addedProduct.product.getWeight(), this.actWeightCapacity));
+
+
+        return this;
+    }
 
     private Behavior<FridgeCommand> onPowerFridgeOff(PowerFridge powerFridge) {
         boolean powerOn = powerFridge.powerOn;
