@@ -1,5 +1,6 @@
 package at.fhv.sysarch.lab2.homeautomation.devices;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.PostStop;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -48,25 +49,29 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         public LogStatus() {}
     }
 
+    // initializing (called by HomeAutomationController)
+    public static Behavior<FridgeCommand> create(ActorRef<FridgeWeightSensor.WeightCommand> weightSensor, ActorRef<FridgeSpaceSensor.SpaceCommand> spaceSensor, String groupId, String deviceId) {
+        return Behaviors.setup(context -> new Fridge(context, weightSensor, spaceSensor, groupId, deviceId));
+    }
+
     // class attributes
     private final String groupId;
     private final String deviceId;
+    private final ActorRef<FridgeWeightSensor.WeightCommand> weightSensor;
+    private final ActorRef<FridgeSpaceSensor.SpaceCommand> spaceSensor;
     private List<Product> products;
     private int weightCapacity;
     private int spaceCapacity;
     private boolean poweredOn = true;
 
     // constructor
-    public Fridge(ActorContext<FridgeCommand> context, String groupId, String deviceId) {
+    public Fridge(ActorContext<FridgeCommand> context, ActorRef<FridgeWeightSensor.WeightCommand> weightSensor, ActorRef<FridgeSpaceSensor.SpaceCommand> spaceSensor, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;
         this.deviceId = deviceId;
+        this.weightSensor = weightSensor;
+        this.spaceSensor = spaceSensor;
         getContext().getLog().info("Fridge started");
-    }
-
-    // initializing (called by HomeAutomationController)
-    public static Behavior<FridgeCommand> create(String groupId, String deviceId) {
-        return Behaviors.setup(context -> new Fridge(context, groupId, deviceId));
     }
 
     // behavior of Fridge class -> determines which method gets called after tell has been called from outside

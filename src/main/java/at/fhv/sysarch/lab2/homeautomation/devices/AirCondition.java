@@ -45,6 +45,11 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         public LogStatus() {}
     }
 
+    // initializing (called by HomeAutomationController)
+    public static Behavior<AirConditionCommand> create(String groupId, String deviceId) {
+        return Behaviors.setup(context -> new AirCondition(context, groupId, deviceId));
+    }
+
     // class attributes
     private final String groupId;
     private final String deviceId;
@@ -57,11 +62,6 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
         this.groupId = groupId;
         this.deviceId = deviceId;
         getContext().getLog().info("AirCondition started");
-    }
-
-    // initializing (called by HomeAutomationController)
-    public static Behavior<AirConditionCommand> create(String groupId, String deviceId) {
-        return Behaviors.setup(context -> new AirCondition(context, groupId, deviceId));
     }
 
     // behavior of AirCondition class -> determines which method gets called after tell has been called from outside

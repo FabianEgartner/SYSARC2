@@ -31,14 +31,13 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
     private final String groupId;
     private final String deviceId;
 
-
     // constructor
     public FridgeWeightSensor(ActorContext<FridgeWeightSensor.WeightCommand> context, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;
         this.deviceId = deviceId;
 
-        getContext().getLog().info("WeightSensor started");
+        getContext().getLog().info("FridgeWeightSensor started");
     }
 
     @Override

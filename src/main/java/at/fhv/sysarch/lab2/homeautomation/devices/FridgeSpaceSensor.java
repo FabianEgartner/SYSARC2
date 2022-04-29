@@ -30,7 +30,6 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
     // class attributes
     private final String groupId;
     private final String deviceId;
-    // private final ActorRef<Blinds.BlindsCommand> blinds;
 
     // constructor
     public FridgeSpaceSensor(ActorContext<FridgeSpaceSensor.SpaceCommand> context, String groupId, String deviceId) {
@@ -38,7 +37,7 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
         this.groupId = groupId;
         this.deviceId = deviceId;
 
-        getContext().getLog().info("WeatherSensor started");
+        getContext().getLog().info("FridgeSpaceSensor started");
     }
 
     @Override
