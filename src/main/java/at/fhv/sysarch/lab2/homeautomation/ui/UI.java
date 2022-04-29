@@ -7,12 +7,9 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import at.fhv.sysarch.lab2.homeautomation.devices.AirCondition;
-import at.fhv.sysarch.lab2.homeautomation.devices.Blinds;
-import at.fhv.sysarch.lab2.homeautomation.devices.TemperatureSensor;
+import at.fhv.sysarch.lab2.homeautomation.devices.*;
 import at.fhv.sysarch.lab2.homeautomation.devices.enums.BlindsState;
 import at.fhv.sysarch.lab2.homeautomation.devices.enums.WeatherCondition;
-import at.fhv.sysarch.lab2.homeautomation.devices.WeatherSensor;
 
 import java.util.Optional;
 import java.util.Scanner;
@@ -23,19 +20,22 @@ public class UI extends AbstractBehavior<Void> {
     private ActorRef<AirCondition.AirConditionCommand> airCondition;
     private ActorRef<WeatherSensor.WeatherCommand> weatherSensor;
     private ActorRef<Blinds.BlindsCommand> blinds;
+    private ActorRef<MediaStation.MediaStationCommand> mediaStation;
 
     public static Behavior<Void> create(ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
                                         ActorRef<AirCondition.AirConditionCommand> airCondition,
                                         ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
-                                        ActorRef<Blinds.BlindsCommand> blinds) {
-        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor, blinds));
+                                        ActorRef<Blinds.BlindsCommand> blinds,
+                                        ActorRef<MediaStation.MediaStationCommand> mediaStation) {
+        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor, blinds, mediaStation));
     }
 
     private UI(ActorContext<Void> context,
-                ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
-                ActorRef<AirCondition.AirConditionCommand> airCondition,
-                ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
-                ActorRef<Blinds.BlindsCommand> blinds) {
+               ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
+               ActorRef<AirCondition.AirConditionCommand> airCondition,
+               ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
+               ActorRef<Blinds.BlindsCommand> blinds,
+               ActorRef<MediaStation.MediaStationCommand> mediaStation) {
         super(context);
         // TODO: implement actor and behavior as needed
         // TODO: move UI initialization to appropriate place
@@ -43,7 +43,8 @@ public class UI extends AbstractBehavior<Void> {
         this.tempSensor = tempSensor;
         this.weatherSensor = weatherSensor;
         this.blinds = blinds;
-        new Thread(() -> { this.runCommandLine(); }).start();
+        this.mediaStation = mediaStation;
+        new Thread(this::runCommandLine).start();
 
         getContext().getLog().info("UI started");
     }
@@ -112,15 +113,31 @@ public class UI extends AbstractBehavior<Void> {
                 String blindsStateInput = command[1].toUpperCase();
 
                 if (blindsStateInput.equals(BlindsState.OPEN.toString())) {
-                    this.blinds.tell(new Blinds.MoveBlinds(BlindsState.OPEN));
+                    this.blinds.tell(new Blinds.MoveBlindsWeatherSensor(BlindsState.OPEN));
                 }
                 else if (blindsStateInput.equals(BlindsState.CLOSED.toString())) {
-                    this.blinds.tell(new Blinds.MoveBlinds(BlindsState.CLOSED));
+                    this.blinds.tell(new Blinds.MoveBlindsWeatherSensor(BlindsState.CLOSED));
                 }
             }
 
             if(command[0].equals("b_status")) {
                 this.blinds.tell(new Blinds.LogStatus());
+            }
+
+            // MediaStation
+            if(command[0].equals("m")) {
+                String mediaStationStateInput = command[1].toLowerCase();
+
+                if (mediaStationStateInput.equals("true")) {
+                    this.mediaStation.tell(new MediaStation.WatchMovie(true));
+                }
+                else if (mediaStationStateInput.equals("false")) {
+                    this.mediaStation.tell(new MediaStation.WatchMovie(false));
+                }
+            }
+
+            if(command[0].equals("m_status")) {
+                this.mediaStation.tell(new MediaStation.LogStatus());
             }
 
             // TODO: process Input

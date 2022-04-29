@@ -1,5 +1,6 @@
 package at.fhv.sysarch.lab2.homeautomation.devices;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.PostStop;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -8,63 +9,67 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.devices.enums.BlindsState;
 
-public class MediaStation extends AbstractBehavior<MediaStation.BlindsCommand> {
+public class MediaStation extends AbstractBehavior<MediaStation.MediaStationCommand> {
 
     // interface
-    public interface BlindsCommand {}
+    public interface MediaStationCommand {}
 
     // classes or "methods" callable -> triggered by tell
-    public static final class MoveBlinds implements MediaStation.BlindsCommand {
-        final BlindsState blindsState;
+    public static final class WatchMovie implements MediaStation.MediaStationCommand {
+        final boolean movieRunning;
 
-        public MoveBlinds(BlindsState blindsState) {this.blindsState = blindsState; }
+        public WatchMovie(boolean movieRunning) {this.movieRunning = movieRunning; }
     }
 
-    public static final class LogStatus implements MediaStation.BlindsCommand {
+    public static final class LogStatus implements MediaStation.MediaStationCommand {
         public LogStatus() {}
     }
 
     // initializing (called by HomeAutomationController)
-    public static Behavior<BlindsCommand> create(String groupId, String deviceId) {
-        return Behaviors.setup(context -> new MediaStation(context, groupId, deviceId));
+    public static Behavior<MediaStationCommand> create(ActorRef<Blinds.BlindsCommand> blinds, String groupId, String deviceId) {
+        return Behaviors.setup(context -> new MediaStation(context, blinds, groupId, deviceId));
     }
 
     // class attributes
     private final String groupId;
     private final String deviceId;
-    private boolean blindsAreUp = true;
+    private final ActorRef<Blinds.BlindsCommand> blinds;
+    private boolean movieRunning = false;
 
     // constructor
-    public MediaStation(ActorContext<BlindsCommand> context, String groupId, String deviceId) {
+    public MediaStation(ActorContext<MediaStationCommand> context, ActorRef<Blinds.BlindsCommand> blinds, String groupId, String deviceId) {
         super(context);
         this.groupId = groupId;
         this.deviceId = deviceId;
+        this.blinds = blinds;
 
-        getContext().getLog().info("Blinds started");
+        getContext().getLog().info("MediaStation started");
     }
 
     @Override
-    public Receive<BlindsCommand> createReceive() {
+    public Receive<MediaStationCommand> createReceive() {
         return newReceiveBuilder()
-                .onMessage(MediaStation.MoveBlinds.class, this::onMoveBlinds)
+                .onMessage(MediaStation.WatchMovie.class, this::onWatchMovie)
                 .onMessage(MediaStation.LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
 
-    private Behavior<MediaStation.BlindsCommand> onMoveBlinds (MoveBlinds moveBlinds) {
-        BlindsState blindsState = moveBlinds.blindsState;
+    private Behavior<MediaStation.MediaStationCommand> onWatchMovie (WatchMovie watchMovie) {
+        boolean movieRunning = watchMovie.movieRunning;
 
-        getContext().getLog().info("Blinds received {}", blindsState);
+        getContext().getLog().info("MediaStation received {}", movieRunning);
 
-        if (blindsState.equals(BlindsState.OPEN)) {
-            getContext().getLog().info("Blinds are up");
-            this.blindsAreUp = true;
+        if (movieRunning) {
+            getContext().getLog().info("Movie is running");
+            this.movieRunning = true;
+            this.blinds.tell(new Blinds.MoveBlindsMediaStation(BlindsState.CLOSED));
 
         }
-        else if (blindsState.equals(BlindsState.CLOSED)) {
-            getContext().getLog().info("Blinds are down");
-            this.blindsAreUp = false;
+        else {
+            getContext().getLog().info("Movie is not running");
+            this.movieRunning = false;
+            this.blinds.tell(new Blinds.MoveBlindsMediaStation(BlindsState.OPEN));
         }
 
         return this;

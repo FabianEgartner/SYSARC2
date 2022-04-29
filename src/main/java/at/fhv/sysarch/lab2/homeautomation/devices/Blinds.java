@@ -46,7 +46,8 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
     @Override
     public Receive<BlindsCommand> createReceive() {
         return newReceiveBuilder()
-                .onMessage(Blinds.MoveBlinds.class, this::onMoveBlinds)
+                .onMessage(Blinds.MoveBlindsWeatherSensor.class, this::onMoveBlindsWeatherSensor)
+                .onMessage(Blinds.MoveBlindsMediaStation.class, this::onMoveBlindsMediaStation)
                 .onMessage(Blinds.LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
@@ -65,6 +66,24 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
         else if (blindsState.equals(BlindsState.CLOSED)) {
             getContext().getLog().info("Blinds are down");
             this.blindsAreUp = false;
+        }
+
+        return this;
+    }
+
+    private Behavior<Blinds.BlindsCommand> onMoveBlindsMediaStation (MoveBlindsMediaStation moveBlindsMediaStation) {
+        BlindsState blindsState = moveBlindsMediaStation.blindsState;
+
+        getContext().getLog().info("Blinds received {}", blindsState);
+
+        if (blindsState.equals(BlindsState.OPEN)) {
+            this.movieRunning = false;
+
+        }
+        else if (blindsState.equals(BlindsState.CLOSED)) {
+            getContext().getLog().info("Blinds are down");
+            this.blindsAreUp = false;
+            this.movieRunning = true;
         }
 
         return this;
