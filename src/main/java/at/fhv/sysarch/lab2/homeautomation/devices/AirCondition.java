@@ -131,7 +131,6 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
     private Behavior<AirConditionCommand> powerOn() {
         this.poweredOn = true;
         this.active = false;
-        System.out.println(("POWERED ON!!!"));
 
         // change behavior -> when turned on: reaction to temperature changes
         return Behaviors.receive(AirConditionCommand.class)
@@ -145,7 +144,6 @@ public class AirCondition extends AbstractBehavior<AirCondition.AirConditionComm
     private Behavior<AirConditionCommand> powerOff() {
         this.poweredOn = false;
         this.active = false;
-        System.out.println(("POWERED OFF!!!"));
 
         // change behavior -> when turned off: no reaction to temperature changes anymore
         return Behaviors.receive(AirConditionCommand.class)
