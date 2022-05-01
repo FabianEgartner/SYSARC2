@@ -210,6 +210,12 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
             this.occupiedWeight -= productToConsume.getWeight();
 
             getContext().getLog().info(productToConsume.getName() +  " consumed from fridge");
+
+            // add/order new product if all products are consumed
+            if (!this.products.contains(productToConsume)) {
+                getContext().getSelf().tell(new Fridge.AddedProduct(productToConsume));
+                getContext().getLog().info("All " + productToConsume.getName() +  "s consumed. Adding another " + productToConsume.getName() + " to fridge.");
+            }
         }
         else {
             getContext().getLog().info(productToConsume.getName() +  " not in fridge");
