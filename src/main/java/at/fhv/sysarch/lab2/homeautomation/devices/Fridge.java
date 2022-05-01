@@ -9,6 +9,13 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.products.Product;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
@@ -65,6 +72,10 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         public LogProducts() {}
     }
 
+    public static final class LogHistory implements FridgeCommand {
+        public LogHistory() {}
+    }
+
     public static final class LogStatus implements FridgeCommand {
         public LogStatus() {}
     }
@@ -80,6 +91,7 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     private final ActorRef<FridgeSpaceSensor.SpaceCommand> spaceSensor;
     private final ActorRef<FridgeWeightSensor.WeightCommand> weightSensor;
     private List<Product> products;
+    private List<String> historyOfAddedProducts;
     private int occupiedSpace;
     private int occupiedWeight;
     private boolean poweredOn = true;
@@ -92,13 +104,25 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         this.spaceSensor = context.spawn(FridgeSpaceSensor.create(getContext().getSelf()), "SpaceSensor");
         this.weightSensor = context.spawn(FridgeWeightSensor.create(getContext().getSelf()), "WeightSensor");
         this.products = products;
+        this.historyOfAddedProducts = new ArrayList<>();
 
         for (Product product : this.products) {
             occupiedSpace += product.getSpace();
             occupiedWeight += product.getWeight();
+            addToHistory(product);
         }
 
         getContext().getLog().info("Fridge started");
+    }
+
+    private void addToHistory(Product product) {
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        String currentTime = timeFormatter.format(LocalTime.now()) + " Uhr";
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        String currentDate = dateFormatter.format(LocalDate.now());
+
+        historyOfAddedProducts.add(product.getName() + " added to fridge at " + currentTime + " on " + currentDate);
     }
 
     // behavior of Fridge class -> determines which method gets called after tell has been called from outside
@@ -107,6 +131,7 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         return newReceiveBuilder()
                 .onMessage(PowerFridge.class, this::onPowerFridgeOff)
                 .onMessage(LogProducts.class, this::onLogProducts)
+                .onMessage(LogHistory.class, this::onLogHistory)
                 .onMessage(LogStatus.class, this::onLogStatus)
                 .onMessage(AddedProduct.class, this::onAddProduct)
                 .onMessage(ConsumedProduct.class, this::onConsumeProduct)
@@ -147,6 +172,7 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         return newReceiveBuilder()
                 .onMessage(PowerFridge.class, this::onPowerFridgeOff)
                 .onMessage(LogProducts.class, this::onLogProducts)
+                .onMessage(LogHistory.class, this::onLogHistory)
                 .onMessage(LogStatus.class, this::onLogStatus)
                 .onMessage(AddedProduct.class, this::onAddProduct)
                 .onMessage(ConsumedProduct.class, this::onConsumeProduct)
@@ -216,6 +242,7 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
             this.occupiedSpace += productToAdd.getSpace();
             this.occupiedWeight += productToAdd.getWeight();
             this.products.add(productToAdd);
+            addToHistory(productToAdd);
             getContext().getLog().info(productToAdd.getName() + " added to fridge");
         }
         else {
@@ -242,6 +269,14 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         return Behaviors.same();
     }
 
+    private Behavior<FridgeCommand> onLogHistory(LogHistory logHistory) {
+
+        for (String entry : historyOfAddedProducts) {
+            getContext().getLog().info(entry);
+        }
+
+        return Behaviors.same();
+    }
 
     private Fridge onPostStop() {
         getContext().getLog().info("Fridge actor {}-{} stopped", groupId, deviceId);

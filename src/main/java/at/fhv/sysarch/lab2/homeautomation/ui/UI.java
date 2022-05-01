@@ -187,6 +187,10 @@ public class UI extends AbstractBehavior<Void> {
                     this.fridge.tell(new Fridge.LogProducts());
                 }
 
+                if (fridgeStateInput.equals("history")) {
+                    this.fridge.tell(new Fridge.LogHistory());
+                }
+
                 else if (fridgeStateInput.equals("power")) {
                     String booleanInput = command[2].toLowerCase();
 
