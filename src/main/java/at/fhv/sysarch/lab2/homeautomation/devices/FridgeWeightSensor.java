@@ -7,6 +7,7 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import at.fhv.sysarch.lab2.homeautomation.products.Product;
 
 public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.WeightCommand> {
 
@@ -14,12 +15,12 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
     public interface WeightCommand {}
 
     public static final class ReadWeight implements FridgeWeightSensor.WeightCommand {
-        final int newProductWeight;
-        final int actFridgeWeight;
+        final Product productToAdd;
+        final int occupiedWeight;
 
-        public ReadWeight(int newProductWeight, int actFridgeWeight) {
-            this.newProductWeight = newProductWeight;
-            this.actFridgeWeight = actFridgeWeight;
+        public ReadWeight(Product productToAdd, int occupiedWeight) {
+            this.productToAdd = productToAdd;
+            this.occupiedWeight = occupiedWeight;
         }
     }
 
@@ -51,12 +52,15 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
 
     // concrete implementation -> reaction to tell calls
     private Behavior<FridgeWeightSensor.WeightCommand> onReadWeight(ReadWeight readWeight) {
-        if ((readWeight.actFridgeWeight + readWeight.newProductWeight) > this.maxWeight) {
+        Product productToAdd = readWeight.productToAdd;
+        int weightOfProductToAdd = productToAdd.getWeight();
+        int alreadyOccupiedWeight = ReadWeight.occupiedSpace;
 
+        if ((alreadyOccupiedWeight + weightOfProductToAdd) < this.maxWeight) {
+            this.fridge.tell(new Fridge.UpdateWeight(true, productToAdd));
         }
-
         else {
-
+            this.fridge.tell(new Fridge.UpdateWeight(false, productToAdd));
         }
 
         return this;
