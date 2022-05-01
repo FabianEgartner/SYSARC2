@@ -33,8 +33,12 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         }
     }
 
-    public static final class LogStatus implements FridgeCommand {
-        public LogStatus() {}
+    public static final class ConsumedProduct implements FridgeCommand {
+        final Product product;
+
+        public ConsumedProduct(Product product) {
+            this.product = product;
+        }
     }
 
     public static final class UpdateSpace implements FridgeCommand {
@@ -55,6 +59,14 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
             this.isNotTooHeavy = isNotTooHeavy;
             this.productToAdd = productToAdd;
         }
+    }
+
+    public static final class LogProducts implements FridgeCommand {
+        public LogProducts() {}
+    }
+
+    public static final class LogStatus implements FridgeCommand {
+        public LogStatus() {}
     }
 
     // initializing (called by HomeAutomationController)
@@ -93,9 +105,11 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     @Override
     public Receive<FridgeCommand> createReceive() {
         return newReceiveBuilder()
-                .onMessage(AddedProduct.class, this::onAddProduct)
                 .onMessage(PowerFridge.class, this::onPowerFridgeOff)
+                .onMessage(LogProducts.class, this::onLogProducts)
                 .onMessage(LogStatus.class, this::onLogStatus)
+                .onMessage(AddedProduct.class, this::onAddProduct)
+                .onMessage(ConsumedProduct.class, this::onConsumeProduct)
                 .onMessage(UpdateSpace.class, this::onUpdateSpace)
                 .onMessage(UpdateWeight.class, this::onUpdateWeight)
                 .onSignal(PostStop.class, signal -> onPostStop())
@@ -103,25 +117,6 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     }
 
     // concrete implementation -> reaction to tell calls
-    private Behavior<FridgeCommand> onLogStatus(LogStatus logStatus) {
-        getContext().getLog().info("groupId: " + this.groupId);
-        getContext().getLog().info("deviceId: " + this.deviceId);
-        getContext().getLog().info("products: " + this.products);
-        getContext().getLog().info("poweredOn: " + this.poweredOn);
-        getContext().getLog().info("occupiedSpace: " + this.occupiedSpace);
-        getContext().getLog().info("occupiedWeight: " + this.occupiedWeight);
-
-        return Behaviors.same();
-    }
-
-    private Behavior<FridgeCommand> onAddProduct(AddedProduct addedProduct) {
-
-        // check space and weight if enough space
-        this.spaceSensor.tell(new FridgeSpaceSensor.ReadSpace(addedProduct.product, this.occupiedSpace));
-
-        return this;
-    }
-
     private Behavior<FridgeCommand> onPowerFridgeOff(PowerFridge powerFridge) {
         boolean powerOn = powerFridge.powerOn;
 
@@ -149,10 +144,14 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     private Behavior<FridgeCommand> powerOn() {
         this.poweredOn = true;
 
-        // change behavior -> when turned on: reaction to temperature changes
-        return Behaviors.receive(FridgeCommand.class)
+        return newReceiveBuilder()
                 .onMessage(PowerFridge.class, this::onPowerFridgeOff)
+                .onMessage(LogProducts.class, this::onLogProducts)
                 .onMessage(LogStatus.class, this::onLogStatus)
+                .onMessage(AddedProduct.class, this::onAddProduct)
+                .onMessage(ConsumedProduct.class, this::onConsumeProduct)
+                .onMessage(UpdateSpace.class, this::onUpdateSpace)
+                .onMessage(UpdateWeight.class, this::onUpdateWeight)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
@@ -160,12 +159,37 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
     private Behavior<FridgeCommand> powerOff() {
         this.poweredOn = false;
 
-        // change behavior -> when turned off: no reaction to temperature changes anymore
-        return Behaviors.receive(FridgeCommand.class)
+        return newReceiveBuilder()
                 .onMessage(PowerFridge.class, this::onPowerFridgeOn)
                 .onMessage(LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
+    }
+
+    private Behavior<FridgeCommand> onAddProduct(AddedProduct addedProduct) {
+
+        // 1) check space, 2) check weight if enough space, 3) add product if enough space and not too heavy
+        this.spaceSensor.tell(new FridgeSpaceSensor.ReadSpace(addedProduct.product, this.occupiedSpace));
+
+        return this;
+    }
+
+    private Behavior<FridgeCommand> onConsumeProduct(ConsumedProduct consumedProduct) {
+
+        Product productToConsume = consumedProduct.product;
+
+        if (this.products.contains(productToConsume)) {
+            products.remove(productToConsume);
+            this.occupiedSpace -= productToConsume.getSpace();
+            this.occupiedWeight -= productToConsume.getWeight();
+
+            getContext().getLog().info(productToConsume.getName() +  " consumed from fridge");
+        }
+        else {
+            getContext().getLog().info(productToConsume.getName() +  " not in fridge");
+        }
+
+        return Behaviors.same();
     }
 
     private Behavior<FridgeCommand> onUpdateSpace(UpdateSpace updateSpace) {
@@ -180,7 +204,7 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
             getContext().getLog().info(productToAdd.getName() +  " not added to fridge - not enough space available");
         }
 
-        return this;
+        return Behaviors.same();
     }
 
     private Behavior<FridgeCommand> onUpdateWeight(UpdateWeight updateWeight) {
@@ -198,8 +222,26 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
             getContext().getLog().info(productToAdd.getName() + " not added to fridge - too much weight");
         }
 
-        return this;
+        return Behaviors.same();
     }
+
+    private Behavior<FridgeCommand> onLogStatus(LogStatus logStatus) {
+        getContext().getLog().info("groupId: " + this.groupId);
+        getContext().getLog().info("deviceId: " + this.deviceId);
+        getContext().getLog().info("products: " + this.products);
+        getContext().getLog().info("poweredOn: " + this.poweredOn);
+        getContext().getLog().info("occupiedSpace: " + this.occupiedSpace);
+        getContext().getLog().info("occupiedWeight: " + this.occupiedWeight);
+
+        return Behaviors.same();
+    }
+
+    private Behavior<FridgeCommand> onLogProducts(LogProducts logProducts) {
+        getContext().getLog().info("products: " + this.products);
+
+        return Behaviors.same();
+    }
+
 
     private Fridge onPostStop() {
         getContext().getLog().info("Fridge actor {}-{} stopped", groupId, deviceId);

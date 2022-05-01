@@ -166,6 +166,27 @@ public class UI extends AbstractBehavior<Void> {
                             break;
                     }
                 }
+
+                if (fridgeStateInput.equals("consume")) {
+                    String productName = command[2].toLowerCase();
+
+                    switch (productName) {
+                        case "apple":
+                            this.fridge.tell(new Fridge.ConsumedProduct(new Apple()));
+                            break;
+                        case "banana":
+                            this.fridge.tell(new Fridge.ConsumedProduct(new Banana()));
+                            break;
+                        case "watermelon":
+                            this.fridge.tell(new Fridge.ConsumedProduct(new Watermelon()));
+                            break;
+                    }
+                }
+
+                if (fridgeStateInput.equals("products")) {
+                    this.fridge.tell(new Fridge.LogProducts());
+                }
+
                 else if (fridgeStateInput.equals("power")) {
                     String booleanInput = command[2].toLowerCase();
 
