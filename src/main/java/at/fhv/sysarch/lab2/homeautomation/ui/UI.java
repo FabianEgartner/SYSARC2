@@ -25,14 +25,16 @@ public class UI extends AbstractBehavior<Void> {
     private ActorRef<Blinds.BlindsCommand> blinds;
     private ActorRef<MediaStation.MediaStationCommand> mediaStation;
     private ActorRef<Fridge.FridgeCommand> fridge;
+    private ActorRef<Environment.EnvironmentCommand> environment;
 
     public static Behavior<Void> create(ActorRef<TemperatureSensor.TemperatureCommand> tempSensor,
                                         ActorRef<AirCondition.AirConditionCommand> airCondition,
                                         ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
                                         ActorRef<Blinds.BlindsCommand> blinds,
                                         ActorRef<MediaStation.MediaStationCommand> mediaStation,
-                                        ActorRef<Fridge.FridgeCommand> fridge) {
-        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor, blinds, mediaStation, fridge));
+                                        ActorRef<Fridge.FridgeCommand> fridge,
+                                        ActorRef<Environment.EnvironmentCommand> environment) {
+        return Behaviors.setup(context -> new UI(context, tempSensor, airCondition, weatherSensor, blinds, mediaStation, fridge, environment));
     }
 
     private UI(ActorContext<Void> context,
@@ -41,7 +43,8 @@ public class UI extends AbstractBehavior<Void> {
                ActorRef<WeatherSensor.WeatherCommand> weatherSensor,
                ActorRef<Blinds.BlindsCommand> blinds,
                ActorRef<MediaStation.MediaStationCommand> mediaStation,
-               ActorRef<Fridge.FridgeCommand> fridge) {
+               ActorRef<Fridge.FridgeCommand> fridge,
+               ActorRef<Environment.EnvironmentCommand> environment) {
         super(context);
         // TODO: implement actor and behavior as needed
         // TODO: move UI initialization to appropriate place
@@ -51,6 +54,7 @@ public class UI extends AbstractBehavior<Void> {
         this.blinds = blinds;
         this.mediaStation = mediaStation;
         this.fridge = fridge;
+        this.environment = environment;
         new Thread(this::runCommandLine).start();
 
         getContext().getLog().info("UI started");
@@ -207,6 +211,26 @@ public class UI extends AbstractBehavior<Void> {
 
             if (command[0].equals("f_status")) {
                 this.fridge.tell(new Fridge.LogStatus());
+            }
+
+            // Environment
+            if (command[0].equals("e")) {
+                String environmentInput = command[1].toLowerCase();
+
+                if (environmentInput.equals("temp")) {
+                    double temperatureInput = Double.parseDouble(command[2]);
+
+                    this.environment.tell(new Environment.SetTemperature(Optional.of(temperatureInput)));
+                }
+                else if (environmentInput.equals("weather")) {
+                    WeatherCondition weatherCondition = WeatherCondition.valueOf(command[2].toUpperCase());
+
+                    this.environment.tell(new Environment.SetWeatherConditions(weatherCondition));
+                }
+            }
+
+            if (command[0].equals("e_status")) {
+                this.environment.tell(new Environment.LogStatus());
             }
         }
 

@@ -24,6 +24,7 @@ public class HomeAutomationController extends AbstractBehavior<Void>{
     private final ActorRef<Blinds.BlindsCommand> blinds;
     private final ActorRef<MediaStation.MediaStationCommand> mediaStation;
     private final ActorRef<Fridge.FridgeCommand> fridge;
+    private final ActorRef<Environment.EnvironmentCommand> environment;
 
     public static Behavior<Void> create() {
         return Behaviors.setup(HomeAutomationController::new);
@@ -43,7 +44,9 @@ public class HomeAutomationController extends AbstractBehavior<Void>{
         List<Product> products = new LinkedList(List.of(new Apple(), new Banana()));
         this.fridge = getContext().spawn(Fridge.create(products, "5", "1"), "Fridge");
 
-        ActorRef<Void> ui = getContext().spawn(UI.create(this.tempSensor, this.airCondition, this.weatherSensor, this.blinds, this.mediaStation, this.fridge), "UI");
+        this.environment = getContext().spawn(Environment.create(this.tempSensor, this.weatherSensor), "Environment");
+
+        ActorRef<Void> ui = getContext().spawn(UI.create(this.tempSensor, this.airCondition, this.weatherSensor, this.blinds, this.mediaStation, this.fridge, this.environment), "UI");
 
         getContext().getLog().info("HomeAutomation Application started");
     }

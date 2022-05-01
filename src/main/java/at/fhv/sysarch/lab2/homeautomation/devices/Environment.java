@@ -19,6 +19,22 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
     public interface EnvironmentCommand {}
 
     // classes or "methods" callable -> triggered by tell
+    public static final class SetTemperature implements EnvironmentCommand {
+        final Optional<Double> temperature;
+
+        public SetTemperature(Optional<Double> temperature) {
+            this.temperature = temperature;
+        }
+    }
+
+    public static final class SetWeatherConditions implements EnvironmentCommand {
+        final WeatherCondition weatherCondition;
+
+        public SetWeatherConditions(WeatherCondition weatherCondition) {
+            this.weatherCondition = weatherCondition;
+        }
+    }
+
     public static final class ChangedTemperature implements EnvironmentCommand {
 
     }
@@ -37,10 +53,10 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
     }
 
     // class attributes
-    private double temperature = 15.0;
+    private double temperature = 20.0;
     private WeatherCondition weatherCondition = WeatherCondition.CLOUDY;
     private boolean setHighTemp = false;
-    private boolean setLowTemp = true;
+    private boolean setLowTemp = false;
 
     private final ActorRef<TemperatureSensor.TemperatureCommand> temperatureSensor;
     private final ActorRef<WeatherSensor.WeatherCommand> weatherSensor;
@@ -57,8 +73,8 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
 
         this.temperatureTimeScheduler = temperatureTimeScheduler;
         this.weatherTimeScheduler = weatherTimeScheduler;
-        this.temperatureTimeScheduler.startTimerAtFixedRate(new ChangedTemperature(), Duration.ofSeconds(5));
-        this.weatherTimeScheduler.startTimerAtFixedRate(new ChangedWeatherConditions(), Duration.ofSeconds(30));
+        this.temperatureTimeScheduler.startTimerAtFixedRate(new ChangedTemperature(), Duration.ofSeconds(30));
+        this.weatherTimeScheduler.startTimerAtFixedRate(new ChangedWeatherConditions(), Duration.ofSeconds(60));
     }
 
     @Override
@@ -66,6 +82,8 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
         return newReceiveBuilder()
                 .onMessage(ChangedTemperature.class, this::onChangeTemperature)
                 .onMessage(ChangedWeatherConditions.class, this::onChangeWeatherConditions)
+                .onMessage(SetTemperature.class, this::onSetTemperature)
+                .onMessage(SetWeatherConditions.class, this::onSetWeatherConditions)
                 .onMessage(LogStatus.class, this::onLogStatus)
                 .build();
     }
@@ -81,25 +99,24 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
 
     private Behavior<EnvironmentCommand> onChangeTemperature(ChangedTemperature changedTemperature) {
 
-        if (setLowTemp && temperature < 25.0) {
-            temperature = temperature + 1.0;
-        }
+        Random random = new Random();
 
-        if (setHighTemp && temperature > 15.0) {
-            temperature = temperature - 1.0;
-        }
+        temperature += random.nextDouble();
 
-        if (temperature == 25.0) {
+        if (temperature >= 25.0) {
             setHighTemp = true;
+            setLowTemp = false;
+
+        } else if (temperature <= 15.0) {
+            setHighTemp = false;
+            setLowTemp = true;
+
+        } else {
+            setHighTemp = false;
             setLowTemp = false;
         }
 
-        if (temperature == 15.0) {
-            setHighTemp = false;
-            setLowTemp = true;
-        }
-
-        getContext().getLog().info("Environment received {}", temperature);
+        getContext().getLog().info("Environment (Temperature) received {}", temperature);
         this.temperatureSensor.tell(new TemperatureSensor.ReadTemperature(Optional.of(temperature)));
 
         return this;
@@ -115,8 +132,33 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
             weatherCondition = WeatherCondition.CLOUDY;
         }
 
-        getContext().getLog().info("Environment received {}", weatherCondition);
+        getContext().getLog().info("Environment (Weather) received {}", weatherCondition);
         this.weatherSensor.tell(new WeatherSensor.ReadWeather(weatherCondition));
+
+        return this;
+    }
+
+    private Behavior<EnvironmentCommand> onSetTemperature(SetTemperature setTemperature) {
+
+
+        if (setTemperature.temperature.isPresent() && temperature != setTemperature.temperature.get()) {
+            temperature = setTemperature.temperature.get();
+
+            getContext().getLog().info("Environment (Temperature) received {}", temperature);
+            this.temperatureSensor.tell(new TemperatureSensor.ReadTemperature(Optional.of(temperature)));
+        }
+
+        return this;
+    }
+
+    private Behavior<EnvironmentCommand> onSetWeatherConditions(SetWeatherConditions setWeatherConditions) {
+
+        if (!weatherCondition.equals(setWeatherConditions.weatherCondition)) {
+            weatherCondition = setWeatherConditions.weatherCondition;
+
+            getContext().getLog().info("Environment (Weather) received {}", weatherCondition);
+            this.weatherSensor.tell(new WeatherSensor.ReadWeather(weatherCondition));
+        }
 
         return this;
     }
