@@ -47,6 +47,16 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         }
     }
 
+    public static final class UpdateWeight implements FridgeCommand {
+        final boolean isNotTooHeavy;
+        final Product productToAdd;
+
+        public UpdateWeight(boolean isNotTooHeavy, Product productToAdd) {
+            this.isNotTooHeavy = isNotTooHeavy;
+            this.productToAdd = productToAdd;
+        }
+    }
+
     // initializing (called by HomeAutomationController)
     public static Behavior<FridgeCommand> create(List<Product> products, String groupId, String deviceId) {
         return Behaviors.setup(context -> new Fridge(context, products, groupId, deviceId));
@@ -87,6 +97,7 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
                 .onMessage(PowerFridge.class, this::onPowerFridgeOff)
                 .onMessage(LogStatus.class, this::onLogStatus)
                 .onMessage(UpdateSpace.class, this::onUpdateSpace)
+                .onMessage(UpdateWeight.class, this::onUpdateWeight)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
     }
@@ -96,9 +107,9 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
         getContext().getLog().info("groupId: " + this.groupId);
         getContext().getLog().info("deviceId: " + this.deviceId);
         getContext().getLog().info("products: " + this.products);
-        getContext().getLog().info("weightCapacity: " + this.occupiedWeight);
-        getContext().getLog().info("spaceCapacity: " + this.occupiedSpace);
         getContext().getLog().info("poweredOn: " + this.poweredOn);
+        getContext().getLog().info("occupiedSpace: " + this.occupiedSpace);
+        getContext().getLog().info("occupiedWeight: " + this.occupiedWeight);
 
         return Behaviors.same();
     }
@@ -166,7 +177,25 @@ public class Fridge extends AbstractBehavior<Fridge.FridgeCommand> {
             this.weightSensor.tell(new FridgeWeightSensor.ReadWeight(productToAdd, this.occupiedWeight));
         }
         else {
-            getContext().getLog().info("not enough space available");
+            getContext().getLog().info(productToAdd.getName() +  " not added to fridge - not enough space available");
+        }
+
+        return this;
+    }
+
+    private Behavior<FridgeCommand> onUpdateWeight(UpdateWeight updateWeight) {
+
+        Product productToAdd = updateWeight.productToAdd;
+        boolean isNotTooHeavy = updateWeight.isNotTooHeavy;
+
+        if (isNotTooHeavy) {
+            this.occupiedSpace += productToAdd.getSpace();
+            this.occupiedWeight += productToAdd.getWeight();
+            this.products.add(productToAdd);
+            getContext().getLog().info(productToAdd.getName() + " added to fridge");
+        }
+        else {
+            getContext().getLog().info(productToAdd.getName() + " not added to fridge - too much weight");
         }
 
         return this;

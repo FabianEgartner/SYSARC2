@@ -37,7 +37,7 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
     public FridgeWeightSensor(ActorContext<FridgeWeightSensor.WeightCommand> context, ActorRef<Fridge.FridgeCommand> fridge) {
         super(context);
         this.fridge = fridge;
-        this.maxWeight = 100;
+        this.maxWeight = 10;
 
         getContext().getLog().info("FridgeWeightSensor started");
     }
@@ -54,14 +54,12 @@ public class FridgeWeightSensor extends AbstractBehavior<FridgeWeightSensor.Weig
     private Behavior<FridgeWeightSensor.WeightCommand> onReadWeight(ReadWeight readWeight) {
         Product productToAdd = readWeight.productToAdd;
         int weightOfProductToAdd = productToAdd.getWeight();
-        int alreadyOccupiedWeight = ReadWeight.occupiedSpace;
+        int occupiedWeight = readWeight.occupiedWeight;
 
-        if ((alreadyOccupiedWeight + weightOfProductToAdd) < this.maxWeight) {
+        if ((occupiedWeight + weightOfProductToAdd) <= this.maxWeight)
             this.fridge.tell(new Fridge.UpdateWeight(true, productToAdd));
-        }
-        else {
+        else
             this.fridge.tell(new Fridge.UpdateWeight(false, productToAdd));
-        }
 
         return this;
     }

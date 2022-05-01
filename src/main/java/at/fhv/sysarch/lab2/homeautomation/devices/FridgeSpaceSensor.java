@@ -37,7 +37,7 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
     public FridgeSpaceSensor(ActorContext<FridgeSpaceSensor.SpaceCommand> context, ActorRef<Fridge.FridgeCommand> fridge) {
         super(context);
         this.fridge = fridge;
-        this.maxSpace = 100;
+        this.maxSpace = 10;
 
         getContext().getLog().info("FridgeSpaceSensor started");
     }
@@ -56,12 +56,10 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
         int spaceOfProductToAdd = productToAdd.getSpace();
         int alreadyOccupiedSpace = readSpace.occupiedSpace;
 
-        if ((alreadyOccupiedSpace + spaceOfProductToAdd) < this.maxSpace) {
+        if ((alreadyOccupiedSpace + spaceOfProductToAdd) <= this.maxSpace)
             this.fridge.tell(new Fridge.UpdateSpace(true, productToAdd));
-        }
-        else {
+        else
             this.fridge.tell(new Fridge.UpdateSpace(false, productToAdd));
-        }
 
         return this;
     }

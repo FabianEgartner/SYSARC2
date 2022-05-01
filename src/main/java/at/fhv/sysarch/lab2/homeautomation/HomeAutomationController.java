@@ -8,6 +8,8 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import at.fhv.sysarch.lab2.homeautomation.devices.*;
+import at.fhv.sysarch.lab2.homeautomation.products.Apple;
+import at.fhv.sysarch.lab2.homeautomation.products.Banana;
 import at.fhv.sysarch.lab2.homeautomation.products.Product;
 import at.fhv.sysarch.lab2.homeautomation.ui.UI;
 
@@ -38,8 +40,7 @@ public class HomeAutomationController extends AbstractBehavior<Void>{
         this.weatherSensor = getContext().spawn(WeatherSensor.create(this.blinds, "1", "2"), "WeatherSensor");
         this.mediaStation = getContext().spawn(MediaStation.create(this.blinds, "4", "1"), "MediaStation");
 
-        List<Product> products = new LinkedList<>();
-        // TODO: fill list with products
+        List<Product> products = new LinkedList(List.of(new Apple(), new Banana()));
         this.fridge = getContext().spawn(Fridge.create(products, "5", "1"), "Fridge");
 
         ActorRef<Void> ui = getContext().spawn(UI.create(this.tempSensor, this.airCondition, this.weatherSensor, this.blinds, this.mediaStation, this.fridge), "UI");
