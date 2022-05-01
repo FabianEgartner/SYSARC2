@@ -2,11 +2,7 @@ package at.fhv.sysarch.lab2.homeautomation.devices;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
-import akka.actor.typed.javadsl.AbstractBehavior;
-import akka.actor.typed.javadsl.ActorContext;
-import akka.actor.typed.javadsl.Behaviors;
-import akka.actor.typed.javadsl.Receive;
-import akka.actor.typed.javadsl.TimerScheduler;
+import akka.actor.typed.javadsl.*;
 import at.fhv.sysarch.lab2.homeautomation.devices.enums.WeatherCondition;
 
 import java.time.Duration;
@@ -73,8 +69,8 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
 
         this.temperatureTimeScheduler = temperatureTimeScheduler;
         this.weatherTimeScheduler = weatherTimeScheduler;
-        this.temperatureTimeScheduler.startTimerAtFixedRate(new ChangedTemperature(), Duration.ofSeconds(30));
-        this.weatherTimeScheduler.startTimerAtFixedRate(new ChangedWeatherConditions(), Duration.ofSeconds(60));
+        this.temperatureTimeScheduler.startTimerAtFixedRate(new ChangedTemperature(), Duration.ofSeconds(5));
+        this.weatherTimeScheduler.startTimerAtFixedRate(new ChangedWeatherConditions(), Duration.ofSeconds(30));
     }
 
     @Override
@@ -101,7 +97,9 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
 
         Random random = new Random();
 
-        temperature += random.nextDouble();
+        // add a random double between -2.00 and +2.00 to current temperature
+        temperature += random.nextDouble() * 4 - 2;
+        temperature = Math.round(temperature * 100.00) / 100.00;
 
         if (temperature >= 25.0) {
             setHighTemp = true;
@@ -139,7 +137,6 @@ public class Environment extends AbstractBehavior<Environment.EnvironmentCommand
     }
 
     private Behavior<EnvironmentCommand> onSetTemperature(SetTemperature setTemperature) {
-
 
         if (setTemperature.temperature.isPresent() && temperature != setTemperature.temperature.get()) {
             temperature = setTemperature.temperature.get();
