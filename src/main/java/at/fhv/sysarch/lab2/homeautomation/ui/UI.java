@@ -12,7 +12,7 @@ import at.fhv.sysarch.lab2.homeautomation.devices.enums.BlindsState;
 import at.fhv.sysarch.lab2.homeautomation.devices.enums.WeatherCondition;
 import at.fhv.sysarch.lab2.homeautomation.products.Apple;
 import at.fhv.sysarch.lab2.homeautomation.products.Banana;
-import at.fhv.sysarch.lab2.homeautomation.products.WaterMelon;
+import at.fhv.sysarch.lab2.homeautomation.products.Watermelon;
 
 import java.util.Optional;
 import java.util.Scanner;
@@ -162,7 +162,7 @@ public class UI extends AbstractBehavior<Void> {
                             this.fridge.tell(new Fridge.AddedProduct(new Banana()));
                             break;
                         case "watermelon":
-                            this.fridge.tell(new Fridge.AddedProduct(new WaterMelon()));
+                            this.fridge.tell(new Fridge.AddedProduct(new Watermelon()));
                             break;
                     }
                 }

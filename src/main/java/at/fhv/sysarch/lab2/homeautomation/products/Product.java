@@ -35,4 +35,7 @@ public abstract class Product {
     public void setSpace(int space) {
         this.space = space;
     }
+
+    @Override
+    public String toString() {return name; }
 }

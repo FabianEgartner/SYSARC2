@@ -7,6 +7,7 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import at.fhv.sysarch.lab2.homeautomation.products.Product;
 
 public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceCommand> {
 
@@ -14,12 +15,12 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
     public interface SpaceCommand {}
 
     public static final class ReadSpace implements FridgeSpaceSensor.SpaceCommand {
-        final int newProductSpace;
-        final int actFridgeSpace;
+        final Product productToAdd;
+        final int occupiedSpace;
 
-        public ReadSpace(int newProductSpace, int actFridgeSpace) {
-            this.newProductSpace = newProductSpace;
-            this.actFridgeSpace = actFridgeSpace;
+        public ReadSpace(Product productToAdd, int occupiedSpace) {
+            this.productToAdd = productToAdd;
+            this.occupiedSpace = occupiedSpace;
         }
     }
 
@@ -36,7 +37,7 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
     public FridgeSpaceSensor(ActorContext<FridgeSpaceSensor.SpaceCommand> context, ActorRef<Fridge.FridgeCommand> fridge) {
         super(context);
         this.fridge = fridge;
-        this.maxSpace = 100;
+        this.maxSpace = 10;
 
         getContext().getLog().info("FridgeSpaceSensor started");
     }
@@ -50,13 +51,15 @@ public class FridgeSpaceSensor extends AbstractBehavior<FridgeSpaceSensor.SpaceC
     }
 
     // concrete implementation -> reaction to tell calls
-    private Behavior<FridgeSpaceSensor.SpaceCommand> onReadSpace(FridgeSpaceSensor.ReadSpace readSpace) {
-        if ((readSpace.actFridgeSpace + readSpace.newProductSpace) > this.maxSpace) {
+    private Behavior<FridgeSpaceSensor.SpaceCommand> onReadSpace(ReadSpace readSpace) {
+        Product productToAdd = readSpace.productToAdd;
+        int spaceOfProductToAdd = productToAdd.getSpace();
+        int alreadyOccupiedSpace = readSpace.occupiedSpace;
 
-        }
-        else {
-
-        }
+        if ((alreadyOccupiedSpace + spaceOfProductToAdd) <= this.maxSpace)
+            this.fridge.tell(new Fridge.UpdateSpace(true, productToAdd));
+        else
+            this.fridge.tell(new Fridge.UpdateSpace(false, productToAdd));
 
         return this;
     }
