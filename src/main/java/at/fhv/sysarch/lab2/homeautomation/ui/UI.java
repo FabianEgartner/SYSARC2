@@ -46,8 +46,7 @@ public class UI extends AbstractBehavior<Void> {
                ActorRef<Fridge.FridgeCommand> fridge,
                ActorRef<Environment.EnvironmentCommand> environment) {
         super(context);
-        // TODO: implement actor and behavior as needed
-        // TODO: move UI initialization to appropriate place
+
         this.airCondition = airCondition;
         this.tempSensor = tempSensor;
         this.weatherSensor = weatherSensor;
@@ -71,7 +70,6 @@ public class UI extends AbstractBehavior<Void> {
     }
 
     public void runCommandLine() {
-        // TODO: Create Actor for UI Input-Handling
         Scanner scanner = new Scanner(System.in);
         String[] input = null;
         String reader = "";
@@ -79,7 +77,6 @@ public class UI extends AbstractBehavior<Void> {
 
         while (!reader.equalsIgnoreCase("quit") && scanner.hasNextLine()) {
             reader = scanner.nextLine();
-            // TODO: change input handling
             String[] command = reader.split(" ");
 
             // TemperatureSensor
