@@ -14,12 +14,8 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
     public interface BlindsCommand {}
 
     // classes or "methods" callable -> triggered by tell
-    public static final class MoveBlindsMediaStation implements Blinds.BlindsCommand {
-        final BlindsState blindsState;
-
-        public MoveBlindsMediaStation(BlindsState blindsState) {
-            this.blindsState = blindsState;
-        }
+    public static final class StartMovie implements Blinds.BlindsCommand {
+        public StartMovie() {}
     }
 
     public static final class MoveBlindsWeatherSensor implements Blinds.BlindsCommand {
@@ -28,6 +24,11 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
         public MoveBlindsWeatherSensor(BlindsState blindsState) {
             this.blindsState = blindsState;
         }
+    }
+
+    public static final class StopMovie implements Blinds.BlindsCommand {
+
+        public StopMovie() {}
     }
 
     public static final class LogStatus implements Blinds.BlindsCommand {
@@ -59,7 +60,8 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
     public Receive<BlindsCommand> createReceive() {
         return newReceiveBuilder()
                 .onMessage(Blinds.MoveBlindsWeatherSensor.class, this::onMoveBlindsWeatherSensor)
-                .onMessage(Blinds.MoveBlindsMediaStation.class, this::onMoveBlindsMediaStation)
+                .onMessage(Blinds.StartMovie.class, this::onStartMovie)
+                .onMessage(Blinds.StopMovie.class, this::onStopMovie)
                 .onMessage(Blinds.LogStatus.class, this::onLogStatus)
                 .onSignal(PostStop.class, signal -> onPostStop())
                 .build();
@@ -85,21 +87,17 @@ public class Blinds extends AbstractBehavior<Blinds.BlindsCommand> {
         return this;
     }
 
-    private Behavior<Blinds.BlindsCommand> onMoveBlindsMediaStation (MoveBlindsMediaStation moveBlindsMediaStation) {
-        BlindsState blindsState = moveBlindsMediaStation.blindsState;
+    private Behavior<Blinds.BlindsCommand> onStartMovie (StartMovie moveBlindsMediaStation) {
+        getContext().getLog().info("Blinds are down");
+        this.blindsAreUp = false;
+        this.movieRunning = true;
 
-        getContext().getLog().info("Blinds received {}", blindsState);
+        return this;
+    }
 
-        if (blindsState.equals(BlindsState.OPEN)) {
-            this.movieRunning = false;
-
-        }
-        else if (blindsState.equals(BlindsState.CLOSED)) {
-            getContext().getLog().info("Blinds are down");
-            this.blindsAreUp = false;
-            this.movieRunning = true;
-        }
-
+    private Behavior<Blinds.BlindsCommand> onStopMovie (StopMovie stopMovie) {
+        getContext().getLog().info("Blinds received stop movie");
+        this.movieRunning = false;
         return this;
     }
 

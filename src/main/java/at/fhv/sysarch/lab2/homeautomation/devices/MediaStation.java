@@ -63,12 +63,13 @@ public class MediaStation extends AbstractBehavior<MediaStation.MediaStationComm
         if (startMovie && !this.movieRunning) {
             getContext().getLog().info("Movie is running");
             this.movieRunning = true;
-            this.blinds.tell(new Blinds.MoveBlindsMediaStation(BlindsState.CLOSED));
+            this.blinds.tell(new Blinds.StartMovie());
 
         }
         else if (!startMovie) {
             getContext().getLog().info("Movie is not running");
             this.movieRunning = false;
+            this.blinds.tell(new Blinds.StopMovie());
         }
 
         return this;
